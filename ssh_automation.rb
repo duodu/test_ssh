@@ -1,28 +1,45 @@
 require 'net/ssh'
 require 'net/scp'
 require 'net/sftp'
-require 'win32ole'
+require File.expand_path('../test_excel.rb', __FILE__)
+Dir::chdir('E:/lib/')
+#$local = 'E:/lib/*'
 
-HOST = '10.48.192.15'
-USER = 'lxl'
-PASS = 'handpay'
-DESTINATION = '/home/lxl/testssh'
-LOCAL = 'E:/lib/*'
-DEPLOY_EXCEL = 'E:/lib/mall/deploy.xlsx'
-
-
-excel = WIN32OLE::new('excel.Application')
-workbook = excel.Workbooks.Open(DEPLOY_EXCEL)
-worksheet = workbook.Worksheets(1)
-worksheet.Select
-puts worksheet.Range('A1').value
-workbook.close
-excel.Quit
-
-Net::SCP.start(HOST, USER, :password => PASS) do |scp|
-    # upload a file to a remote server
-  Dir[LOCAL].each { |file|
-    scp.upload! file, DESTINATION
-    puts "upload successfull"
-}
+$instance.each do |instance|
+  instance[:common].each do |common|
+    puts 'deploy common package'
+    if File::exists?(common)
+      puts common +' exists'
+      Net::SCP.start(instance[:ip], instance[:username], :password => instance[:password], :port => instance[:port]) do |scp|
+        scp.upload! common, instance[:destination] + 'common'
+        puts common + " upload successfully"
+      end
+    else
+      puts common + ' not exists'
+    end
+  end
+  instance[:mall].each do |mall|
+    puts 'deploy mall package'
+    if File::exists?(mall)
+      puts mall +' exists'
+      Net::SCP.start(instance[:ip], instance[:username], :password => instance[:password], :port => instance[:port]) do |scp|
+        scp.upload! mall, instance[:destination] + 'mall'
+        puts mall + " upload successfully"
+      end
+    else
+      puts mall + ' not exists'
+    end
+  end
+  instance[:payment].each do |payment|
+    puts 'deploy payment package'
+    if File::exists?(payment)
+      puts payment +' exists'
+      Net::SCP.start(instance[:ip], instance[:username], :password => instance[:password], :port => instance[:port]) do |scp|
+        scp.upload! payment, instance[:destination] + 'payment'
+        puts payment + " upload successfully"
+      end
+    else
+      puts payment + ' not exists'
+    end
+  end
 end
